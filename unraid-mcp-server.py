@@ -1174,7 +1174,7 @@ if __name__ == "__main__":
             else:
                 # For HTTP transports, use the new API
                 import uvicorn
-                uvicorn.run(mcp.create_app(), host=host, port=port)
+                uvicorn.run(mcp, host=host, port=port)
         elif UNRAID_MCP_TRANSPORT == "sse":
             # Deprecated SSE transport - log warning
             logger.warning("SSE transport is deprecated and may be removed in a future version. Consider switching to 'streamable-http'.")
