@@ -15,7 +15,8 @@ from typing import Optional, Dict, Any, List, Union
 from logging.handlers import RotatingFileHandler
 
 from dotenv import load_dotenv
-from fastmcp import FastMCP, ToolError
+from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.exceptions import ToolError
 
 # Ensure the script's directory is in the Python path for potential local imports if structured differently
 SCRIPT_DIR = Path(__file__).resolve().parent
