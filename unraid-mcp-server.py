@@ -1169,12 +1169,12 @@ if __name__ == "__main__":
     try:
         if UNRAID_MCP_TRANSPORT == "streamable-http":
             # Use the recommended Streamable HTTP transport
-            mcp.run(
-                transport="streamable-http", 
-                host=UNRAID_MCP_HOST, 
-                port=UNRAID_MCP_PORT,
-                path="/mcp"  # Standard path for MCP
-            )
+            if transport == "stdio":
+                mcp.run()
+            else:
+                # For HTTP transports, use the new API
+                import uvicorn
+                uvicorn.run(mcp.create_app(), host=host, port=port)
         elif UNRAID_MCP_TRANSPORT == "sse":
             # Deprecated SSE transport - log warning
             logger.warning("SSE transport is deprecated and may be removed in a future version. Consider switching to 'streamable-http'.")
