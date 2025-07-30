@@ -13,6 +13,11 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 # Final runtime stage
 FROM python:3.11-slim
 
+# Install curl for health checks
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Create non-root user for security
 RUN groupadd -r unraid && useradd -r -g unraid unraid
 
@@ -23,8 +28,7 @@ WORKDIR /app
 COPY --from=builder /root/.local /home/unraid/.local
 
 # Copy application code
-COPY unraid-mcp-server-simple.py ./unraid-mcp-server.py
-COPY .env.example .
+COPY unraid-mcp-server-http.py ./unraid-mcp-server.py
 
 # Create logs directory and set permissions
 RUN mkdir -p /app/logs && chown -R unraid:unraid /app

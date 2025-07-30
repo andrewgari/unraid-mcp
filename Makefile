@@ -78,8 +78,16 @@ test:
 		exit 1; \
 	fi
 	@PORT=$$(grep "UNRAID_MCP_PORT" .env 2>/dev/null | cut -d '=' -f2 | tr -d ' ' || echo "6970"); \
-	if curl -s "http://localhost:$$PORT/health" > /dev/null; then \
+	echo "Testing health endpoint..."; \
+	if curl -s -f "http://localhost:$$PORT/health" | grep -q "healthy"; then \
 		echo "✅ Health check passed"; \
 	else \
 		echo "❌ Health check failed"; \
+		exit 1; \
+	fi; \
+	echo "Testing system info endpoint..."; \
+	if curl -s -f "http://localhost:$$PORT/system-info" > /dev/null; then \
+		echo "✅ System info endpoint working"; \
+	else \
+		echo "⚠️  System info endpoint failed (may be due to API configuration)"; \
 	fi
