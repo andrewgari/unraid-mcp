@@ -16,7 +16,8 @@ from logging.handlers import RotatingFileHandler
 
 from dotenv import load_dotenv
 from mcp.server import Server
-from mcp.types import Tool
+from mcp.types import Tool, TextContent
+import mcp.server.stdio
 
 # Ensure the script's directory is in the Python path for potential local imports if structured differently
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -105,12 +106,8 @@ if not UNRAID_API_URL or not UNRAID_API_KEY:
     logger.error("UNRAID_API_URL and UNRAID_API_KEY must be set in the .env file for the server to function.")
     sys.exit(1)
 
-# Initialize FastMCP Server
-mcp = FastMCP(
-    name="Unraid MCP Server",
-    instructions="Provides tools to interact with an Unraid server's GraphQL API.",
-    version="0.1.0",
-)
+# Initialize MCP Server
+server = Server("Unraid MCP Server")
 
 # HTTP client timeout settings
 TIMEOUT_CONFIG = httpx.Timeout(10.0, read=30.0, connect=5.0)
@@ -148,24 +145,43 @@ async def _make_graphql_request(
                 logger.error(f"GraphQL API returned errors: {response_data['errors']}")
                 # Use ToolError for GraphQL errors to provide better feedback to LLM
                 error_details = "; ".join([err.get("message", str(err)) for err in response_data["errors"]])
-                raise ToolError(f"GraphQL API error: {error_details}")
+                raise Exception(f"GraphQL API error: {error_details}")
             
             logger.debug("GraphQL request successful.")
             return response_data.get("data", {}) # Return only the data part
 
     except httpx.HTTPStatusError as e:
         logger.error(f"HTTP error occurred: {e.response.status_code} - {e.response.text}")
-        raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+        raise Exception(f"HTTP error {e.response.status_code}: {e.response.text}")
     except httpx.RequestError as e:
         logger.error(f"Request error occurred: {e}")
-        raise ToolError(f"Network connection error: {str(e)}")
+        raise Exception(f"Network connection error: {str(e)}")
     except json.JSONDecodeError as e:
         logger.error(f"Failed to decode JSON response: {e}")
-        raise ToolError(f"Invalid JSON response from Unraid API: {str(e)}")
+        raise Exception(f"Invalid JSON response from Unraid API: {str(e)}")
 
 # --- Tool Implementations Will Go Here ---
 
-@mcp.tool()
+@server.list_tools()
+async def list_tools():
+    """List available tools"""
+    return [
+        Tool(
+            name="get_system_info",
+            description="Retrieves comprehensive information about the Unraid system, OS, CPU, memory, and baseboard."
+        ),
+        # Add other tools here...
+    ]
+
+@server.call_tool()
+async def call_tool(name: str, arguments: dict):
+    """Handle tool calls"""
+    if name == "get_system_info":
+        return await get_system_info()
+    # Add other tool handlers here...
+    else:
+        raise Exception(f"Unknown tool: {name}")
+
 async def get_system_info() -> Dict[str, Any]:
     """Retrieves comprehensive information about the Unraid system, OS, CPU, memory, and baseboard."""
     query = """

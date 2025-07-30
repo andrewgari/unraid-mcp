@@ -1,18 +1,42 @@
+version: '3.8'
+
 services:
   unraid-mcp:
-    image: unraid-mcp-server # Assumes you've built this image locally using 'docker build -t unraid-mcp-server .'
-    # Or, to build automatically if the image doesn't exist:
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
-    container_name: unraid-mcp
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/andrewgari/unraid-mcp:latest
+    container_name: unraid-mcp-server
     restart: unless-stopped
     ports:
-      # HostPort:ContainerPort (maps to UNRAID_MCP_PORT inside the container, default 6970)
-      # Change the host port (left side) if 6970 is already in use on your host
-      - "6970:6970" 
+      - "${UNRAID_MCP_PORT:-6970}:6970"
+    environment:
+      - UNRAID_API_URL=${UNRAID_API_URL}
+      - UNRAID_API_KEY=${UNRAID_API_KEY}
+      - UNRAID_MCP_PORT=${UNRAID_MCP_PORT:-6970}
+      - UNRAID_MCP_HOST=0.0.0.0
+      - UNRAID_MCP_TRANSPORT=${UNRAID_MCP_TRANSPORT:-streamable-http}
+      - UNRAID_VERIFY_SSL=${UNRAID_VERIFY_SSL:-true}
+      - UNRAID_MCP_LOG_LEVEL=${UNRAID_MCP_LOG_LEVEL:-INFO}
+      - UNRAID_MCP_LOG_FILE=/app/logs/unraid-mcp.log
+    volumes:
+      - ./logs:/app/logs
+      - /etc/localtime:/etc/localtime:ro
     env_file:
-      - .env.local # Loads environment variables from .env.local in the same directory as this docker-compose.yml
-    # Optional: If you want to mount a specific directory for logs (ensure UNRAID_MCP_LOG_FILE in .env.local points within this mount)
-    # volumes:
-    #   - ./logs:/app/logs # Example: maps ./logs on host to /app/logs in container
+      - .env
+    networks:
+      - unraid-mcp
+    healthcheck:
+      test: ["CMD", "python", "-c", "print('Container is running')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.unraid.docker.managed=composeman"
+      - "com.unraid.docker.webui=http://[IP]:[PORT:6970]"
+      - "com.unraid.docker.icon=https://raw.githubusercontent.com/andrewgari/unraid-mcp/main/docs/icon.png"
+
+networks:
+  unraid-mcp:
+    driver: bridge
