@@ -15,8 +15,8 @@ from typing import Optional, Dict, Any, List, Union
 from logging.handlers import RotatingFileHandler
 
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server import Server
+from mcp.types import Tool
 
 # Ensure the script's directory is in the Python path for potential local imports if structured differently
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -1169,12 +1169,8 @@ if __name__ == "__main__":
     try:
         if UNRAID_MCP_TRANSPORT == "streamable-http":
             # Use the recommended Streamable HTTP transport
-            if UNRAID_MCP_TRANSPORT == "stdio":
-                mcp.run()
-            else:
-                # For HTTP transports, use the new API
-                import uvicorn
-                uvicorn.run(mcp, host=host, port=port)
+            import uvicorn
+            uvicorn.run(mcp, host=UNRAID_MCP_HOST, port=UNRAID_MCP_PORT)
         elif UNRAID_MCP_TRANSPORT == "sse":
             # Deprecated SSE transport - log warning
             logger.warning("SSE transport is deprecated and may be removed in a future version. Consider switching to 'streamable-http'.")
