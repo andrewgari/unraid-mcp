@@ -1169,7 +1169,7 @@ if __name__ == "__main__":
     try:
         if UNRAID_MCP_TRANSPORT == "streamable-http":
             # Use the recommended Streamable HTTP transport
-            if transport == "stdio":
+            if UNRAID_MCP_TRANSPORT == "stdio":
                 mcp.run()
             else:
                 # For HTTP transports, use the new API
